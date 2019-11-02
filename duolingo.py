@@ -8,10 +8,6 @@ from requests import Session
 from werkzeug.datastructures import MultiDict
 from learnsession import DuolingoLearnSession
 
-__version__ = "0.3"
-__author__ = "Kartik Talwar"
-__email__ = "hi@kartikt.com"
-__url__ = "https://github.com/KartikTalwar/duolingo"
 __DEBUG__ = True
 
 with open('sampleLearnSession.json', 'r') as f:

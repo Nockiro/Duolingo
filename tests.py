@@ -2,8 +2,8 @@ import os
 import unittest
 import duolingo
 
-USERNAME = os.environ.get('DUOLINGO_USER', 'ferguslongley')
-PASSWORD = os.environ.get('DUOLINGO_PASSWORD')
+USERNAME = os.environ.get('DUOLINGO_USER', 'Robin143310')
+PASSWORD = os.environ.get('DUOLINGO_PASSWORD', "Sixten01")
 
 
 class DuolingoTest(unittest.TestCase):
@@ -92,6 +92,15 @@ class DuolingoTest(unittest.TestCase):
     @unittest.skipIf(not PASSWORD, "You must have valid username/password")
     def test_get_related_words(self):
         response = self.lingo.get_related_words('o')
+
+    @unittest.skipIf(not PASSWORD, "You must have valid username/password")
+    def test_get_current_learnsession(self):
+        session = self.lingo.get_current_learnsession()
+
+    @unittest.skipIf(not PASSWORD, "You must have valid username/password")
+    def test_get_learnquestion(self):
+        for x in range(0, 20):
+            session = self.lingo.get_current_learnsession().getChallenge(x).getSourcePrompt()
 
 if __name__ == '__main__':
     unittest.main()
