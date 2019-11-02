@@ -4,12 +4,18 @@ import json
 import random
 
 import requests
+from requests import Session
 from werkzeug.datastructures import MultiDict
+from learnsession import DuolingoLearnSession
 
 __version__ = "0.3"
 __author__ = "Kartik Talwar"
 __email__ = "hi@kartikt.com"
 __url__ = "https://github.com/KartikTalwar/duolingo"
+__DEBUG__ = True
+
+with open('sampleLearnSession.json', 'r') as f:
+    __sampleData__ = json.load(f)
 
 
 class Struct:
@@ -27,25 +33,28 @@ class Duolingo(object):
         self.password = password
         self.user_url = "https://duolingo.com/users/%s" % self.username
         self.session = requests.Session()
+        self.session.verify = False
         self.leader_data = None
         self.jwt = None
 
         if password:
             self._login()
-
-        self.user_data = Struct(**self._get_data())
+            self.user_data = Struct(**self._get_data())
 
     def _make_req(self, url, data=None):
-        headers = {}
+        headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36'}
         if self.jwt is not None:
             headers['Authorization'] = 'Bearer ' + self.jwt
+
+
         req = requests.Request('POST' if data else 'GET',
                                url,
-                               json=data,
+                               data=json.dumps(data),
                                headers=headers,
                                cookies=self.session.cookies)
         prepped = req.prepare()
-        return self.session.send(prepped)
+        response = self.session.send(prepped)
+        return response
 
     def _login(self):
         """
@@ -73,6 +82,7 @@ class Duolingo(object):
         :type before: str
         :rtype: dict
         """
+
         if before:
             url = "https://www.duolingo.com/stream/{}?before={}"
             url = url.format(self.user_data.id, before)
@@ -501,11 +511,36 @@ class Duolingo(object):
                 return [w for w in overview['vocab_overview']
                         if w['lexeme_id'] in related_lexemes]
 
+    def get_current_learnsession(self, language_abbr=None):
+        if not self.password and not __DEBUG__:
+            raise Exception("You must provide a password for this function")
+        
+        """
+        This URL seems to be consistent over all languages and progresses
+        """
+        learnSessionDataURL = "https://www.duolingo.com/2017-06-30/sessions"
+        
+        data = {"fromLanguage":"de","learningLanguage":"fr","challengeTypes":["characterIntro","characterMatch","characterSelect","completeReverseTranslation","definition","dialogue","form","freeResponse","gapFill","judge","name","readComprehension","select","speak","tapCloze","tapComplete","tapDescribe","translate"],"type":"GLOBAL_PRACTICE","juicy":True,"smartTipsVersion":2}
+        
+        """ Set Debug to false to get real server data """    
+        if not __DEBUG__:
+            if language_abbr and not self._is_current_language(language_abbr):
+                self._switch_language(language_abbr)
+
+            learnRequest = self._make_req(learnSessionDataURL, data)
+            learnSessionData = learnRequest.json()
+        else:
+            learnSessionData = __sampleData__
+        
+        return DuolingoLearnSession(learnSessionData)
+
 
 attrs = [
     'settings', 'languages', 'user_info', 'certificates', 'streak_info',
     'calendar', 'language_progress', 'friends', 'known_words',
-    'learned_skills', 'known_topics', 'activity_stream', 'vocabulary'
+    'learned_skills', 'known_topics', 'activity_stream', 'vocabulary',
+
+    'current_learnsession'
 ]
 
 for attr in attrs:
@@ -516,7 +551,11 @@ for attr in attrs:
 if __name__ == '__main__':
     from pprint import pprint
 
-    duolingo = Duolingo('ferguslongley')
-    knowntopic = duolingo.get_known_topics('it')
+    duolingo = Duolingo('Robin143310')
+    ls = duolingo.get_current_learnsession()
 
-    pprint(knowntopic)
+    """Example: get first question of current global learn session challenge"""
+    print("Frage 1:")
+    pprint(ls.getChallenge(0).getSourcePrompt())
+    print("Antwortmoeglichkeiten:")
+    pprint(ls.getChallenge(0).getCorrectSolutions())
