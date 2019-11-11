@@ -8,7 +8,7 @@ from requests import Session
 from werkzeug.datastructures import MultiDict
 from learnsession import DuolingoLearnSession
 
-__DEBUG__ = True
+__DEBUG__ = False
 
 with open('sampleLearnSession.json', 'r') as f:
     __sampleData__ = json.load(f)
@@ -48,8 +48,10 @@ class Duolingo(object):
                                data=json.dumps(data),
                                headers=headers,
                                cookies=self.session.cookies)
+        print(url)
         prepped = req.prepare()
         response = self.session.send(prepped)
+        print(url)
         return response
 
     def _login(self):
@@ -381,7 +383,7 @@ class Duolingo(object):
         """Return the topics mastered ("golden") by a user in a language."""
         return [topic['title']
                 for topic in self.user_data.language_data[lang]['skills']
-                if topic['learned'] and topic['strength'] == 1.0]
+                if topic['learned'] and topic['levels_finished']==5]
 
     def get_reviewable_topics(self, lang):
         """Return the topics learned but not golden by a user in a language."""
@@ -507,7 +509,7 @@ class Duolingo(object):
                 return [w for w in overview['vocab_overview']
                         if w['lexeme_id'] in related_lexemes]
 
-    def get_current_learnsession(self, language_abbr=None):
+    def get_current_learnsession(self, topic=None):
         if not self.password and not __DEBUG__:
             raise Exception("You must provide a password for this function")
         
@@ -516,12 +518,14 @@ class Duolingo(object):
         """
         learnSessionDataURL = "https://www.duolingo.com/2017-06-30/sessions"
         
-        data = {"fromLanguage":"de","learningLanguage":"fr","challengeTypes":["characterIntro","characterMatch","characterSelect","completeReverseTranslation","definition","dialogue","form","freeResponse","gapFill","judge","name","readComprehension","select","speak","tapCloze","tapComplete","tapDescribe","translate"],"type":"GLOBAL_PRACTICE","juicy":True,"smartTipsVersion":2}
+        #data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":["translate"],"type":"LESSON", "levelIndex":topic["levels_finished"], "levelSessionIndex":topic["progress_level_session_index"],"juicy":True,}
+        data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"LESSON", "skillId":topic['id'], "levelIndex":topic['levels_finished'], "levelSessionIndex":topic['progress_level_session_index']}
         
-        """ Set Debug to false to get real server data """    
+
+        """ Set Debug to false to get real server data """
         if not __DEBUG__:
-            if language_abbr and not self._is_current_language(language_abbr):
-                self._switch_language(language_abbr)
+            if topic['language'] and not self._is_current_language(topic['language']):
+                self._switch_language(topic['language'])
 
             learnRequest = self._make_req(learnSessionDataURL, data)
             learnSessionData = learnRequest.json()
@@ -530,6 +534,16 @@ class Duolingo(object):
         
         return DuolingoLearnSession(learnSessionData)
 
+    def get_skills_in_progress(self, language_abbr=None):
+        """Return topics that have been started but are not mastered yet"""
+        return [topic 
+                for topic in lingo.get_known_topics('pt') 
+                if topic not in lingo.get_golden_topics('pt')]
+
+    def return_user_data(self):
+        from pprint import pprint
+        print((self.user_data.__dir__()))
+        pprint((self.user_data.languages))
 
 attrs = [
     'settings', 'languages', 'user_info', 'certificates', 'streak_info',
@@ -546,12 +560,8 @@ for attr in attrs:
 
 if __name__ == '__main__':
     from pprint import pprint
+    from lschallenge import DuolingoLearnSessionChallenge
 
-    duolingo = Duolingo('Robin143310')
-    ls = duolingo.get_current_learnsession()
+    #duolingo = Duolingo('Robin143310')
+    # ls = duolingo.get_current_learnsession('en')
 
-    """Example: get first question of current global learn session challenge"""
-    print("Frage 1:")
-    pprint(ls.getChallenge(0).getSourcePrompt())
-    print("Antwortmoeglichkeiten:")
-    pprint(ls.getChallenge(0).getCorrectSolutions())
