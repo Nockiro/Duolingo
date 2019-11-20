@@ -6,14 +6,16 @@ from pprint import pprint
 
 if __name__ == "__main__":    
     lingo = duolingo.Duolingo('DSA975012', password='sprachassist') # E-mail - d21292@urhen.com
+
     ls = None
 
-    print(lingo.get_learned_skills('en'))
+    current_language = lingo.get_current_language_abbr()
 
-    for topic in lingo.get_learned_skills('en'):
-            if "Grundl. 1" in topic.values():
+    # print(lingo.get_learned_skills(current_language))
 
-                ls = lingo.get_current_learnsession(topic)
+    for topic in lingo.get_learned_skills(current_language):
+        if lingo.get_skills_in_progress(current_language)[0] in topic.values():
+            ls = lingo.get_current_learnsession(topic)
 
 
 

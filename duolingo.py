@@ -48,10 +48,8 @@ class Duolingo(object):
                                data=json.dumps(data),
                                headers=headers,
                                cookies=self.session.cookies)
-        print(url)
         prepped = req.prepare()
-        response = self.session.send(prepped)
-        print(url)
+        response = self.session.send(prepped, verify=True)
         return response
 
     def _login(self):
@@ -519,7 +517,12 @@ class Duolingo(object):
         learnSessionDataURL = "https://www.duolingo.com/2017-06-30/sessions"
         
         #data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":["translate"],"type":"LESSON", "levelIndex":topic["levels_finished"], "levelSessionIndex":topic["progress_level_session_index"],"juicy":True,}
-        data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"LESSON", "skillId":topic['id'], "levelIndex":topic['levels_finished'], "levelSessionIndex":topic['progress_level_session_index']}
+
+
+        if topic['title'] in self.get_golden_topics(topic['language']):
+            data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"SKILL_PRACTICE", "skillId":topic['id']}
+        else:
+            data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"LESSON", "skillId":topic['id'], "levelIndex":topic['levels_finished'], "levelSessionIndex":topic['progress_level_session_index']}
         
 
         """ Set Debug to false to get real server data """
@@ -536,21 +539,21 @@ class Duolingo(object):
 
     def get_skills_in_progress(self, language_abbr=None):
         """Return topics that have been started but are not mastered yet"""
-        return [topic 
-                for topic in lingo.get_known_topics('pt') 
-                if topic not in lingo.get_golden_topics('pt')]
 
-    def return_user_data(self):
-        from pprint import pprint
-        print((self.user_data.__dir__()))
-        pprint((self.user_data.languages))
+        return [topic 
+                for topic in self.get_known_topics(language_abbr) 
+                if topic not in self.get_golden_topics(language_abbr)]
+
+    def get_current_language_abbr(self):
+        """Return the abbreviation of the current active language the user is studying"""
+        return self.get_abbreviation_of(self.get_user_info()['learning_language_string'])
 
 attrs = [
     'settings', 'languages', 'user_info', 'certificates', 'streak_info',
     'calendar', 'language_progress', 'friends', 'known_words',
     'learned_skills', 'known_topics', 'activity_stream', 'vocabulary',
 
-    'current_learnsession'
+    'current_learnsession', 'skills_in_progress', 'current_language_abbr'
 ]
 
 for attr in attrs:
