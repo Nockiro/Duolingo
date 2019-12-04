@@ -531,17 +531,39 @@ class Duolingo(object):
                 self._switch_language(topic['language'])
 
             learnRequest = self._make_req(learnSessionDataURL, data)
+            print(learnRequest)
             learnSessionData = learnRequest.json()
+
         else:
             learnSessionData = __sampleData__
+
+
         
         return DuolingoLearnSession(learnSessionData)
 
+    def get_active_topics(self, language_abbr=None):
+        """Return the topics that are active for a user in a language."""
+        
+        return [topic['title']
+                for topic in self.user_data.language_data[language_abbr]['skills']
+                if not topic['locked']]
+
+    def get_active_skills(self, language_abbr=None):
+        """Return active skill object  """
+        skills = [skill for skill in
+                  self.user_data.language_data[language_abbr]['skills']]
+
+        self._compute_dependency_order(skills)
+
+        return [skill for skill in
+                sorted(skills, key=lambda skill: skill['dependency_order'])
+                if not skill['locked']]
+
+
     def get_skills_in_progress(self, language_abbr=None):
         """Return topics that have been started but are not mastered yet"""
-
         return [topic 
-                for topic in self.get_known_topics(language_abbr) 
+                for topic in self.get_active_topics(language_abbr) 
                 if topic not in self.get_golden_topics(language_abbr)]
 
     def get_current_language_abbr(self):
@@ -553,7 +575,8 @@ attrs = [
     'calendar', 'language_progress', 'friends', 'known_words',
     'learned_skills', 'known_topics', 'activity_stream', 'vocabulary',
 
-    'current_learnsession', 'skills_in_progress', 'current_language_abbr'
+    'current_learnsession', 'skills_in_progress', 'current_language_abbr',
+    'active_skills', 'active_topics'
 ]
 
 for attr in attrs:

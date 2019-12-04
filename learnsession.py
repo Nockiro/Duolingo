@@ -8,6 +8,7 @@ class DuolingoLearnSession(object):
         self.learnSessionData = jsonResponseData
         self.learnSessionMetaData = self.learnSessionData["metadata"]
         self.learnSessionChallengeList = self.learnSessionData["challenges"]
+        self.learnSessionID = self.learnSessionData["id"]
 
         self.currentLanguage = self.learnSessionMetaData["language_string"]
 
@@ -17,6 +18,9 @@ class DuolingoLearnSession(object):
 
     def getChallengeList(self):
         return self.learnSessionChallengeList
+
+    def getSessionID(self):
+        return self.learnSessionID
 
 
 if __name__ == '__main__':
