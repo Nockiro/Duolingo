@@ -19,7 +19,7 @@ class DuolingoLearnSessionChallenge(object):
         else:
             return self.challenge["solutionTranslation"]
 
-    def getSourcePrompt(self):
+    def getSourcePrompt(self, target_lang=None):
         """
             Actual question
             judge = Such aus den drei das richtige raus
@@ -56,7 +56,7 @@ class DuolingoLearnSessionChallenge(object):
             return "Bitte lies diesen Satz vor: " + self.getSource()
         elif self.challenge["type"] == "translate":
 
-            return "Übersetze folgendes nach Deutsch: " + self.getSource()
+            return "Übersetze folgendes nach {}: ".format(target_lang) + self.getSource()
         elif self.challenge["type"] == "name":
             return "Wie übersetzt man \"" + self.getSource() + "\"?"
         elif self.challenge["type"] == "form":            
