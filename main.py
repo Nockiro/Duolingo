@@ -21,9 +21,9 @@ if __name__ == "__main__":
 
 
 
-    for challenge in ls.getChallengeList():
-        exercise = DuolingoLearnSessionChallenge(challenge)
-        target_lang = challenge['metadata']['target_language_name']
-        print(exercise.getSourcePrompt(target_lang))
-        print(exercise.getCorrectSolutions())
-        print()
+    # for challenge in ls.getChallengeList():
+    #     exercise = DuolingoLearnSessionChallenge(challenge)
+    #     target_lang = challenge['metadata']['target_language_name']
+    #     print(exercise.getSourcePrompt(target_lang))
+    #     print(exercise.getCorrectSolutions())
+    #     print()

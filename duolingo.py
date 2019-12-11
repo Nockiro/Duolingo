@@ -5,7 +5,6 @@ import random
 
 import requests
 from requests import Session
-from werkzeug.datastructures import MultiDict
 from learnsession import DuolingoLearnSession
 
 __DEBUG__ = False
@@ -195,44 +194,6 @@ class Duolingo(object):
 
         return data
 
-    @staticmethod
-    def _compute_dependency_order(skills):
-        """
-        Add a field to each skill indicating the order it was learned
-        based on the skill's dependencies. Multiple skills will have the same
-        position if they have the same dependencies.
-        """
-        # Key skills by first dependency. Dependency sets can be uniquely
-        # identified by one dependency in the set.
-        dependency_to_skill = MultiDict([(skill['dependencies_name'][0]
-                                          if skill['dependencies_name']
-                                          else '',
-                                          skill)
-                                         for skill in skills])
-
-        # Start with the first skill and trace the dependency graph through
-        # skill, setting the order it was learned in.
-        index = 0
-        previous_skill = ''
-        while True:
-            for skill in dependency_to_skill.getlist(previous_skill):
-                skill['dependency_order'] = index
-            index += 1
-
-            # Figure out the canonical dependency for the next set of skills.
-            skill_names = set([skill['name']
-                               for skill in
-                               dependency_to_skill.getlist(previous_skill)])
-            canonical_dependency = skill_names.intersection(
-                set(dependency_to_skill.keys()))
-            if canonical_dependency:
-                previous_skill = canonical_dependency.pop()
-            else:
-                # Nothing depends on these skills, so we're done.
-                break
-
-        return skills
-
     def get_settings(self):
         """Get user settings."""
         keys = ['notify_comment', 'deactivated', 'is_follower_by',
@@ -359,10 +320,7 @@ class Duolingo(object):
         skills = [skill for skill in
                   self.user_data.language_data[lang]['skills']]
 
-        self._compute_dependency_order(skills)
-
-        return [skill for skill in
-                sorted(skills, key=lambda skill: skill['dependency_order'])
+        return [skill for skill in skills
                 if skill['learned']]
 
     def get_known_topics(self, lang):
@@ -534,12 +492,51 @@ class Duolingo(object):
             print(learnRequest)
             learnSessionData = learnRequest.json()
 
+            import re
+
+            regex = re.compile("\[(.*?)\]")
+            replaced, choices = None, None
+            for j in range(len(learnSessionData['challenges'])):
+                for i in learnSessionData['challenges'][j]['compactTranslations']:
+                    user_input = self.get_user_input(i).split()
+                    choices = re.findall(regex, i)
+                    replaced = i
+                    # print(i)
+                    if len(choices) != 0:
+                    #     something = []
+                    #     for choice in choices:
+                    #         # replaced = re.sub(regex, str(choicePosition), replaced, 1)
+                    #         for singleChoice in choice.split("/"):
+                    #             replaced = re.sub(regex, singleChoice, replaced)
+                    #             print(singleChoice)
+                    #     replaced = replaced.split()
+                    # print()
+                        for choicePoisition in range(len(choices)):
+                            replaced = re.sub(regex, str(choicePoisition), replaced, 1)
+                        replaced = replaced.split()
+                        print("replaced: ", replaced)
+                        for word in replaced:
+                            if word.isdigit():
+                                print("choices: ", choices[int(word)].split("/"))
+                                for choice in choices[int(word)].split("/"):
+                                    print(choice, user_input[replaced.index(word)], replaced.index(word), word)
+                                    if choice == user_input[replaced.index(word)]:
+                                        print("Right")
+
+                                        break
+                                    else:
+                                        print("Wrong")
+                            else:
+                                pass
+
         else:
             learnSessionData = __sampleData__
-
-
         
         return DuolingoLearnSession(learnSessionData)
+
+    def get_user_input(self, sentence=None):
+        user_input = input(sentence)
+        return user_input
 
     def get_active_topics(self, language_abbr=None):
         """Return the topics that are active for a user in a language."""
@@ -553,10 +550,7 @@ class Duolingo(object):
         skills = [skill for skill in
                   self.user_data.language_data[language_abbr]['skills']]
 
-        self._compute_dependency_order(skills)
-
-        return [skill for skill in
-                sorted(skills, key=lambda skill: skill['dependency_order'])
+        return [skill for skill in skills
                 if not skill['locked']]
 
 
@@ -585,9 +579,5 @@ for attr in attrs:
     setattr(Duolingo, attr, prop)
 
 if __name__ == '__main__':
-    from pprint import pprint
-    from lschallenge import DuolingoLearnSessionChallenge
-
-    #duolingo = Duolingo('Robin143310')
-    # ls = duolingo.get_current_learnsession('en')
+    pass
 
