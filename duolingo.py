@@ -492,43 +492,6 @@ class Duolingo(object):
             print(learnRequest)
             learnSessionData = learnRequest.json()
 
-            import re
-
-            regex = re.compile("\[(.*?)\]")
-            replaced, choices = None, None
-            for j in range(len(learnSessionData['challenges'])):
-                for i in learnSessionData['challenges'][j]['compactTranslations']:
-                    user_input = self.get_user_input(i).split()
-                    choices = re.findall(regex, i)
-                    replaced = i
-                    # print(i)
-                    if len(choices) != 0:
-                    #     something = []
-                    #     for choice in choices:
-                    #         # replaced = re.sub(regex, str(choicePosition), replaced, 1)
-                    #         for singleChoice in choice.split("/"):
-                    #             replaced = re.sub(regex, singleChoice, replaced)
-                    #             print(singleChoice)
-                    #     replaced = replaced.split()
-                    # print()
-                        for choicePoisition in range(len(choices)):
-                            replaced = re.sub(regex, str(choicePoisition), replaced, 1)
-                        replaced = replaced.split()
-                        print("replaced: ", replaced)
-                        for word in replaced:
-                            if word.isdigit():
-                                print("choices: ", choices[int(word)].split("/"))
-                                for choice in choices[int(word)].split("/"):
-                                    print(choice, user_input[replaced.index(word)], replaced.index(word), word)
-                                    if choice == user_input[replaced.index(word)]:
-                                        print("Right")
-
-                                        break
-                                    else:
-                                        print("Wrong")
-                            else:
-                                pass
-
         else:
             learnSessionData = __sampleData__
         

@@ -1,7 +1,6 @@
 import json
 from lschallenge import DuolingoLearnSessionChallenge
 from collections import namedtuple
-from pprint import pprint
 
 class DuolingoLearnSession(object):
     def __init__(self, jsonResponseData):
@@ -21,14 +20,3 @@ class DuolingoLearnSession(object):
 
     def getSessionID(self):
         return self.learnSessionID
-
-
-if __name__ == '__main__':
-    #user = ls_user.User("DSA975012", "sprachassist")
-
-    #pprint(user.getLanguage)
-    ls = DuolingoLearnSession(json.loads(data.getData()))
-    print("Frage 1:")
-    pprint(ls.getChallenge(0).getSourcePrompt())
-    print("Antwortmoeglichkeiten:")
-    pprint(ls.getChallenge(0).getCorrectSolutions())

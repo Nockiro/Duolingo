@@ -1,4 +1,5 @@
 import json
+from user_answer_check import UserAnswerCheck
 
 class DuolingoLearnSessionChallenge(object):
     def __init__(self, challengeJsonObject):
@@ -93,6 +94,11 @@ class DuolingoLearnSessionChallenge(object):
             return self.challenge["metadata"]["correct_solutions"]
         else:
             return self.challenge["compactSolutions"]
+
+
+    def getAnswerCheck(self, user_input):
+        solution_response = UserAnswerCheck(user_input).checkAnswer(self.getCorrectSolutions())
+        return solution_response
 
 
 if __name__ == '__main__':
