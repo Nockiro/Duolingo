@@ -1,6 +1,8 @@
 import json
 from lschallenge import DuolingoLearnSessionChallenge
 from collections import namedtuple
+import datetime
+import time
 
 class DuolingoLearnSession(object):
     def __init__(self, jsonResponseData):
@@ -20,3 +22,6 @@ class DuolingoLearnSession(object):
 
     def getSessionID(self):
         return self.learnSessionID
+
+    def getLearnSessionData(self):
+        return self.learnSessionData
