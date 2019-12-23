@@ -2,10 +2,11 @@
 import re
 import json
 import random
+import datetime
+import time
 
 import requests
 from requests import Session
-from werkzeug.datastructures import MultiDict
 from learnsession import DuolingoLearnSession
 
 __DEBUG__ = False
@@ -28,30 +29,30 @@ class Duolingo(object):
         self.username = username
         self.password = password
         self.user_url = "https://duolingo.com/users/%s" % self.username
+        self.learn_session_data_url = "https://www.duolingo.com/2017-06-30/sessions"
         self.session = requests.Session()
         self.session.verify = False
         self.leader_data = None
         self.jwt = None
+        self.session_id = None
 
         if password:
             self._login()
             self.user_data = Struct(**self._get_data())
 
-    def _make_req(self, url, data=None):
+    def _make_req(self, method, url, data=None):
         headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36'}
         if self.jwt is not None:
             headers['Authorization'] = 'Bearer ' + self.jwt
 
-
-        req = requests.Request('POST' if data else 'GET',
-                               url,
-                               data=json.dumps(data),
-                               headers=headers,
-                               cookies=self.session.cookies)
-        print(url)
+        req = requests.Request( method,
+                                url,
+                                data=json.dumps(data),
+                                headers=headers,
+                                cookies=self.session.cookies)
+        
         prepped = req.prepare()
-        response = self.session.send(prepped)
-        print(url)
+        response = self.session.send(prepped, verify=True)
         return response
 
     def _login(self):
@@ -60,7 +61,7 @@ class Duolingo(object):
         """
         login_url = "https://www.duolingo.com/login"
         data = {"login": self.username, "password": self.password}
-        request = self._make_req(login_url, data)
+        request = self._make_req("POST", login_url, data)
         attempt = request.json()
 
         if attempt.get('response') == 'OK':
@@ -87,7 +88,7 @@ class Duolingo(object):
         else:
             url = "https://www.duolingo.com/activity/{}"
             url = url.format(self.user_data.id)
-        request = self._make_req(url)
+        request = self._make_req("GET", url)
         try:
             return request.json()
         except:
@@ -114,7 +115,7 @@ class Duolingo(object):
         else:
             raise Exception('Needs str in Datetime format "%Y.%m.%d %H:%M:%S"')
 
-        self.leader_data = self._make_req(url).json()
+        self.leader_data = self._make_req("GET", url).json()
         data = []
         for result in iter(self.get_friends()):
             for value in iter(self.leader_data['ranking']):
@@ -132,7 +133,7 @@ class Duolingo(object):
         url = url.format(self.user_data.id)
 
         data = {'name': item_name, 'learningLanguage': abbr}
-        request = self._make_req(url, data)
+        request = self._make_req("POST", url, data)
 
         """
         status code '200' indicates that the item was purchased
@@ -169,7 +170,7 @@ class Duolingo(object):
         """
         data = {"learning_language": lang}
         url = "https://www.duolingo.com/switch_language"
-        request = self._make_req(url, data)
+        request = self._make_req("POST", url, data)
 
         try:
             parse = request.json()['tracking_properties']
@@ -182,7 +183,7 @@ class Duolingo(object):
         """
         Get user's data from ``https://www.duolingo.com/users/<username>``.
         """
-        get = self._make_req(self.user_url).json()
+        get = self._make_req("GET", self.user_url).json()
         return get
 
     @staticmethod
@@ -196,44 +197,6 @@ class Duolingo(object):
                 data[key] = getattr(array, key, None)
 
         return data
-
-    @staticmethod
-    def _compute_dependency_order(skills):
-        """
-        Add a field to each skill indicating the order it was learned
-        based on the skill's dependencies. Multiple skills will have the same
-        position if they have the same dependencies.
-        """
-        # Key skills by first dependency. Dependency sets can be uniquely
-        # identified by one dependency in the set.
-        dependency_to_skill = MultiDict([(skill['dependencies_name'][0]
-                                          if skill['dependencies_name']
-                                          else '',
-                                          skill)
-                                         for skill in skills])
-
-        # Start with the first skill and trace the dependency graph through
-        # skill, setting the order it was learned in.
-        index = 0
-        previous_skill = ''
-        while True:
-            for skill in dependency_to_skill.getlist(previous_skill):
-                skill['dependency_order'] = index
-            index += 1
-
-            # Figure out the canonical dependency for the next set of skills.
-            skill_names = set([skill['name']
-                               for skill in
-                               dependency_to_skill.getlist(previous_skill)])
-            canonical_dependency = skill_names.intersection(
-                set(dependency_to_skill.keys()))
-            if canonical_dependency:
-                previous_skill = canonical_dependency.pop()
-            else:
-                # Nothing depends on these skills, so we're done.
-                break
-
-        return skills
 
     def get_settings(self):
         """Get user settings."""
@@ -361,10 +324,7 @@ class Duolingo(object):
         skills = [skill for skill in
                   self.user_data.language_data[lang]['skills']]
 
-        self._compute_dependency_order(skills)
-
-        return [skill for skill in
-                sorted(skills, key=lambda skill: skill['dependency_order'])
+        return [skill for skill in skills
                 if skill['learned']]
 
     def get_known_topics(self, lang):
@@ -427,7 +387,7 @@ class Duolingo(object):
             self._switch_language(language_abbr)
 
         overview_url = "https://www.duolingo.com/vocabulary/overview"
-        overview_request = self._make_req(overview_url)
+        overview_request = self._make_req("GET", overview_url)
         overview = overview_request.json()
 
         return overview
@@ -440,7 +400,7 @@ class Duolingo(object):
         if self._homepage_text:
             return self._homepage_text
         homepage_url = "https://www.duolingo.com"
-        request = self._make_req(homepage_url)
+        request = self._make_req("GET", homepage_url)
         self._homepage_text = request.text
         return self._homepage
 
@@ -500,7 +460,7 @@ class Duolingo(object):
             self._switch_language(language_abbr)
 
         overview_url = "https://www.duolingo.com/vocabulary/overview"
-        overview_request = self._make_req(overview_url)
+        overview_request = self._make_req("GET", overview_url)
         overview = overview_request.json()
 
         for word_data in overview['vocab_overview']:
@@ -516,10 +476,15 @@ class Duolingo(object):
         """
         This URL seems to be consistent over all languages and progresses
         """
-        learnSessionDataURL = "https://www.duolingo.com/2017-06-30/sessions"
+        
         
         #data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":["translate"],"type":"LESSON", "levelIndex":topic["levels_finished"], "levelSessionIndex":topic["progress_level_session_index"],"juicy":True,}
-        data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"LESSON", "skillId":topic['id'], "levelIndex":topic['levels_finished'], "levelSessionIndex":topic['progress_level_session_index']}
+
+
+        if topic['title'] in self.get_golden_topics(topic['language']):
+            data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"SKILL_PRACTICE", "skillId":topic['id']}
+        else:
+            data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"LESSON", "skillId":topic['id'], "levelIndex":topic['levels_finished'], "levelSessionIndex":topic['progress_level_session_index']}
         
 
         """ Set Debug to false to get real server data """
@@ -527,30 +492,57 @@ class Duolingo(object):
             if topic['language'] and not self._is_current_language(topic['language']):
                 self._switch_language(topic['language'])
 
-            learnRequest = self._make_req(learnSessionDataURL, data)
+            learnRequest = self._make_req("POST", self.learn_session_data_url, data)
+            print(learnRequest)
             learnSessionData = learnRequest.json()
+            self.session_id = learnSessionData['metadata']['id']
+
         else:
             learnSessionData = __sampleData__
         
         return DuolingoLearnSession(learnSessionData)
 
+    def get_user_input(self, sentence=None):
+        user_input = input(sentence)
+        return user_input
+
+    def get_active_topics(self, language_abbr=None):
+        """Return the topics that are active for a user in a language."""
+        
+        return [topic['title']
+                for topic in self.user_data.language_data[language_abbr]['skills']
+                if not topic['locked']]
+
+    def get_active_skills(self, language_abbr=None):
+        """Return active skill object  """
+        skills = [skill for skill in
+                  self.user_data.language_data[language_abbr]['skills']]
+
+        return [skill for skill in skills
+                if not skill['locked']]
+
+
     def get_skills_in_progress(self, language_abbr=None):
         """Return topics that have been started but are not mastered yet"""
         return [topic 
-                for topic in lingo.get_known_topics('pt') 
-                if topic not in lingo.get_golden_topics('pt')]
+                for topic in self.get_active_topics(language_abbr) 
+                if topic not in self.get_golden_topics(language_abbr)]
 
-    def return_user_data(self):
-        from pprint import pprint
-        print((self.user_data.__dir__()))
-        pprint((self.user_data.languages))
+    def get_current_language_abbr(self):
+        """Return the abbreviation of the current active language the user is studying"""
+        return self.get_abbreviation_of(self.get_user_info()['learning_language_string'])
+
+    def end_session(self, data):
+        request = self._make_req("PUT", self.learn_session_data_url + "/" + self.session_id, data=data)
+        return request
 
 attrs = [
     'settings', 'languages', 'user_info', 'certificates', 'streak_info',
     'calendar', 'language_progress', 'friends', 'known_words',
     'learned_skills', 'known_topics', 'activity_stream', 'vocabulary',
 
-    'current_learnsession'
+    'current_learnsession', 'skills_in_progress', 'current_language_abbr',
+    'active_skills', 'active_topics'
 ]
 
 for attr in attrs:
@@ -559,9 +551,5 @@ for attr in attrs:
     setattr(Duolingo, attr, prop)
 
 if __name__ == '__main__':
-    from pprint import pprint
-    from lschallenge import DuolingoLearnSessionChallenge
-
-    #duolingo = Duolingo('Robin143310')
-    # ls = duolingo.get_current_learnsession('en')
+    pass
 
