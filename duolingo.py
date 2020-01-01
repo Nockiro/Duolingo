@@ -223,16 +223,6 @@ class Duolingo(object):
         voices = voices_js[voices_js.find("{"):voices_js.find("}") + 1]
         self._tts_voices = json.loads(voices)
 
-    def _get_voice(self, language_abbr, rand=False, voice=None):
-        if not self._tts_voices:
-            self._process_tts_voices()
-        if voice and voice != 'default':
-            return '{}/{}'.format(language_abbr, voice)
-        if rand:
-            return random.choice(self._tts_voices[language_abbr])
-        else:
-            return self._tts_voices[language_abbr][0]
-
     def get_language_voices(self, language_abbr=None):
         if not language_abbr:
             language_abbr = list(self.user_data.language_data.keys())[0]
@@ -246,12 +236,76 @@ class Duolingo(object):
                 voices.append(voice.replace('{}/'.format(language_abbr), ''))
         return voices
 
-    def get_audio_url(self, word, language_abbr=None, random=True, voice=None):
+    def get_audio_url(self, word, language_abbr=None, rand=True, voice=None):
+        # Check word is in vocab
+        if word is None:
+            raise DuolingoException(
+                'A word must be specified to use this function')
+        word = word.lower()
+        # Get default language abbr
         if not language_abbr:
             language_abbr = list(self.user_data.language_data.keys())[0]
         tts_voice = self._get_voice(language_abbr, rand=random, voice=voice)
         return "{}/tts/{}/token/{}".format(self._cloudfront_server, tts_voice,
-                                           word)
+                                           word)	        # Populate voice url dict
+        if self.voice_url_dict is None or language_abbr not in self.voice_url_dict:
+            self._populate_voice_url_dictionary(language_abbr)
+        # If no audio exists for a word, return None
+        if word not in self.voice_url_dict[language_abbr]:
+            return None
+        # Get word audio links
+        word_links = list(self.voice_url_dict[language_abbr][word])
+        # If a voice is specified, get that one or None
+        if voice:
+            for word_link in word_links:
+                if "/{}/".format(voice) in word_link:
+                    return word_link
+            return None
+        # If random, shuffle
+        if rand:
+            return random.choice(word_links)
+        return word_links[0]
+
+    def _populate_voice_url_dictionary(self, lang_abbr):
+        if self.voice_url_dict is None:
+            self.voice_url_dict = {}
+        self.voice_url_dict[lang_abbr] = {}
+        # Get skill IDs
+        skill_ids = []
+        for skill in self.user_data.language_data[lang_abbr]['skills']:
+            skill_ids.append(skill['id'])
+        # Scrape all sessions and create voice url dictionary
+        for skill_id in skill_ids:
+            req_data = {
+                "fromLanguage": "en" if lang_abbr != "en" else "de",
+                "learningLanguage": lang_abbr,
+                "challengeTypes": ["definition", "translate"],
+                "skillId": skill_id,
+                "type": "SKILL_PRACTICE",
+                "juicy": True,
+                "smartTipsVersion": 2
+            }
+            resp = self._make_req(
+                "https://www.duolingo.com/2017-06-30/sessions", req_data)
+            if resp.status_code != 200:
+                continue
+            resp_data = resp.json()
+            for challenge in resp_data['challenges']:
+                self._add_to_voice_url_dict(
+                    lang_abbr, challenge['prompt'], challenge['tts'])
+                if challenge.get("metadata") and challenge['metadata'].get("non_character_tts"):
+                    for word, url in challenge['metadata']['non_character_tts']['tokens'].items():
+                        self._add_to_voice_url_dict(lang_abbr, word, url)
+                for token in challenge['tokens']:
+                    if token.get("tts") and token.get("value"):
+                        self._add_to_voice_url_dict(
+                            lang_abbr, token['value'], token['tts'])
+
+    def _add_to_voice_url_dict(self, lang_abbr, word, url):
+        word = word.lower()
+        if word not in self.voice_url_dict[lang_abbr]:
+            self.voice_url_dict[lang_abbr][word] = set()
+        self.voice_url_dict[lang_abbr][word].add(url)
 
     def get_related_words(self, word, language_abbr=None):
         if not self.password:
@@ -297,20 +351,6 @@ class Duolingo(object):
     def get_current_language_abbr(self):
         """Return the abbreviation of the current active language the user is studying"""
         return self.get_abbreviation_of(self.get_user_info()['learning_language_string'])
-
-
-attrs = [
-    'settings', 'languages', 'user_info', 'certificates', 'streak_info',
-    'calendar', 'language_progress', 'friends', 'known_words',
-    'learned_skills', 'known_topics', 'activity_stream', 'vocabulary',
-
-    'current_learnsession'
-]
-
-for attr in attrs:
-    getter = getattr(Duolingo, "get_" + attr)
-    prop = property(getter)
-    setattr(Duolingo, attr, prop)
 
 if __name__ == '__main__':
     pass

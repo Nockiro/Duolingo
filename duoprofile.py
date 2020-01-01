@@ -26,8 +26,8 @@ class DuoProfile():
 
         leader_data = DuoRequest.doRequest(url, self.session).json()
         data = []
-        for result in iter(self.get_friends()):
-            for value in iter(leader_data['ranking']):
+        for result in self.get_friends():
+            for value in leader_data['ranking']:
                 if result['id'] == int(value):
                     temp = {'points': int(leader_data['ranking'][value]),
                             'unit': unit,
@@ -39,7 +39,7 @@ class DuoProfile():
 
     def get_friends(self):
         """Get user's friends."""
-        for k, v in iter(self.user_data.language_data.items()):
+        for k, v in self.user_data.language_data.items():
             data = []
             for friend in v['points_ranking_data']:
                 temp = {'username': friend['username'],
