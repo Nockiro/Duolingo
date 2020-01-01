@@ -32,10 +32,10 @@ class Duolingo(object):
         self.session.verify = False
 
     def buy_item(self, item_name, abbr):
-        url = 'https://www.duolingo.com/2017-06-30/users/{}/purchase-store-item'
+        url = 'https://www.duolingo.com/2017-06-30/users/{}/shop-items'
         url = url.format(self.user_data.id)
 
-        data = {'name': item_name, 'learningLanguage': abbr}
+        data = {'itemName': item_name, 'learningLanguage': abbr}
         request = self._make_req("POST", url, data)
 
         """
