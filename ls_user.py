@@ -1,6 +1,7 @@
 from duosession import DuoSession
 from duorequest import DuoRequest
 from duoprofile import DuoProfile
+from duovoice import DuoVoice
 from learnsession import DuolingoLearnSession
 from dicthelper import DictHelper
 
@@ -97,6 +98,9 @@ class User():
     def getProfileInfo(self):
         return DuoProfile(self._user_data, self.session)
 
+    def getVoiceStuff(self):
+        return DuoVoice(user.session, user.getFullUserInfo()["language_data"])
+
     def getCurrentLearnSession(self, topic=None):
         if not self.password and not __DEBUG__:
             raise Exception("You must provide a password for this function")
@@ -134,3 +138,4 @@ if __name__ == '__main__':
     pprint(user.getProfileInfo().getFriendlistLeaderboard("week"))
     pprint(user.getProfileInfo().getActivity())
     pprint(user.getProfileInfo().get_friends())
+    pprint(user.getVoiceStuff().get_audio_url("hello", "en"))
