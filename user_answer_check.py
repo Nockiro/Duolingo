@@ -2,10 +2,10 @@ import re
 
 class UserAnswerCheck():
     def __init__(self, user_input):
-        self.user_input = user_input.lower().split()
-
         self.choices_regex = re.compile("\[(.*?)\]")
-        self.punct_regex = re.compile("[\.\?\!\,]")
+        self.punct_regex = re.compile("[\.\?\!\,\;\-]")
+
+        self.user_input = re.sub(self.punct_regex, "", user_input).lower().split()
 
     def checkAnswer(self, solutions):
         for possible_solution in solutions:
