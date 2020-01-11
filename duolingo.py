@@ -65,20 +65,6 @@ class Duolingo(object):
         except AlreadyHaveStoreItemException:
             return False
 
-    def get_language_from_abbr(self, abbr):
-        """Get language full name from abbreviation."""
-        for language in self.user_data.languages:
-            if language['language'] == abbr:
-                return language['language_string']
-        return None
-
-    def get_abbreviation_of(self, name):
-        """Get abbreviation of a language."""
-        for language in self.user_data.languages:
-            if language['language_string'] == name:
-                return language['language']
-        return None
-
     def get_language_details(self, language):
         """Get user's status about a language."""
         for lang in self.user_data.languages:
@@ -181,8 +167,6 @@ class Duolingo(object):
 
     def get_vocabulary(self, language_abbr=None):
         """Get overview of user's vocabulary in a language."""
-        if not self.password:
-            raise Exception("You must provide a password for this function")
         if language_abbr and not self._is_current_language(language_abbr):
             self._switch_language(language_abbr)
 
@@ -194,8 +178,6 @@ class Duolingo(object):
    
 
     def get_related_words(self, word, language_abbr=None):
-        if not self.password:
-            raise Exception("You must provide a password for this function")
         if language_abbr and not self._is_current_language(language_abbr):
             self._switch_language(language_abbr)
 
@@ -212,31 +194,6 @@ class Duolingo(object):
     def get_user_input(self, sentence=None):
         user_input = input(sentence)
         return user_input
-
-    def get_active_topics(self, language_abbr=None):
-        """Return the topics that are active for a user in a language."""
-
-        return [topic['title']
-                for topic in self.user_data.language_data[language_abbr]['skills']
-                if not topic['locked']]
-
-    def get_active_skills(self, language_abbr=None):
-        """Return active skill object  """
-        skills = [skill for skill in
-                  self.user_data.language_data[language_abbr]['skills']]
-
-        return [skill for skill in skills
-                if not skill['locked']]
-
-    def get_skills_in_progress(self, language_abbr=None):
-        """Return topics that have been started but are not mastered yet"""
-        return [topic
-                for topic in self.get_active_topics(language_abbr)
-                if topic not in self.get_golden_topics(language_abbr)]
-
-    def get_current_language_abbr(self):
-        """Return the abbreviation of the current active language the user is studying"""
-        return self.get_abbreviation_of(self.get_user_info()['learning_language_string'])
 
 if __name__ == '__main__':
     pass

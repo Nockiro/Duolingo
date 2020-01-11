@@ -19,14 +19,17 @@ class DuoSession():
 
         login_url = "https://www.duolingo.com/login"
         data = {"login": username, "password": password}
-        response = DuoRequest.doRequest(login_url, self, data)
+        response = DuoRequest.do_request(login_url, self, data)
+
         attempt = response.json()
 
         if attempt.get('response') == 'OK':
             self.jwt = response.headers['jwt']
+            self.username = attempt.get("username")
+            self.user_id = attempt.get("user_id")
             return self
 
-        raise Exception("Login failed")
+        raise Exception("Login failed: " + attempt.get("failure"))
 
 
 if __name__ == '__main__':

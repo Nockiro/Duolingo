@@ -5,12 +5,12 @@ class DuoProfile():
         self.user_data = user_data
         self.session = session
 
-    def getActivity(self, language_abbr=None):
+    def get_activity(self, language_abbr=None):
         """Get user's last actions in the currently selected language."""
         """Array of {datetime, event_type, improvement, skill_id} """
         return self.user_data.calendar
 
-    def getFriendlistLeaderboard(self, unit=None):
+    def get_friendlist_leaderbord(self, unit=None):
         """
         Get user's rank in the week in descending order, stream from
         ``https://www.duolingo.com/friendships/leaderboard_activity?unit=week
@@ -24,7 +24,7 @@ class DuoProfile():
         else:
             raise Exception('Needs unit as argument (week or month)')
 
-        leader_data = DuoRequest.doRequest(url, self.session).json()
+        leader_data = DuoRequest.do_request(url, self.session).json()
         data = []
         for result in self.get_friends():
             for value in leader_data['ranking']:

@@ -1,13 +1,13 @@
 import requests
 import urllib3
-from requests import Session
+from requests import Session, Response
 import json
 
 import duosession
 
 class DuoRequest(object):
     
-    def doRequest(url, duoSession, data=None):
+    def do_request(url, duoSession, data=None, method=None) -> Response:
         
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -15,7 +15,7 @@ class DuoRequest(object):
         if duoSession.jwt is not None:
             headers['Authorization'] = 'Bearer ' + duoSession.jwt
 
-        req = requests.Request('POST' if data else 'GET',
+        req = requests.Request(method if method else ('POST' if data else 'GET'),
                                url,
                                data=json.dumps(data),
                                headers=headers,

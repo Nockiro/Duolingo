@@ -6,14 +6,15 @@ from duorequest import DuoRequest
 class DuoVoice():
 
     def __init__(self, session, langData):
-        self._langData = langData
-        self._userSession = session
+        self._lang_data = langData
+        self._user_session = session
         self._tts_voices = None
         self._cloudfront_server_url = None
         self._homepage_text = None
         self.voice_url_dict = None
 
 
+    #TODO: Get a faster way of getting the urls
     def get_audio_url(self, word, language_abbr=None, rand=True, voice=None):
         # Check word is in vocab
         if word is None:
@@ -21,7 +22,7 @@ class DuoVoice():
         word = word.lower()
         # Get default language abbr
         if not language_abbr:
-            language_abbr = list(self._langData.keys())[0]
+            language_abbr = list(self._lang_data.keys())[0]
 
         if self.voice_url_dict is None or language_abbr not in self.voice_url_dict:
             self._populate_voice_url_dictionary(language_abbr)
@@ -47,7 +48,7 @@ class DuoVoice():
             return self._homepage_text
         homepage_url = "https://www.duolingo.com"
         
-        request = DuoRequest.doRequest(homepage_url, self._userSession)
+        request = DuoRequest.do_request(homepage_url, self._user_session)
         self._homepage_text = request.text
         return self._homepage
 
@@ -67,7 +68,7 @@ class DuoVoice():
         self.voice_url_dict[lang_abbr] = {}
         # Get skill IDs
         skill_ids = []
-        for skill in self._langData[lang_abbr]['skills']:
+        for skill in self._lang_data[lang_abbr]['skills']:
             skill_ids.append(skill['id'])
         # Scrape all sessions and create voice url dictionary
         for skill_id in skill_ids:
@@ -81,7 +82,7 @@ class DuoVoice():
                 "smartTipsVersion": 2
             }
 
-            resp = DuoRequest.doRequest("https://www.duolingo.com/2017-06-30/sessions", self._userSession, req_data)
+            resp = DuoRequest.do_request("https://www.duolingo.com/2017-06-30/sessions", self._user_session, req_data)
             if resp.status_code != 200:
                 continue
 

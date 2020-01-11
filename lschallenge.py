@@ -5,8 +5,13 @@ class DuolingoLearnSessionChallenge(object):
     def __init__(self, challengeJsonObject):
         self.challenge = challengeJsonObject
         self.type = challengeJsonObject["metadata"]["type"]
+        self.targetLang = self.challenge['metadata']['target_language_name']
 
-    def getSource(self):
+    def get_answer_language(self):
+        """ Returns the language in which the question should be answered"""
+        return self.targetLang;
+
+    def get_source(self):
         """
         Word of origin
         """
@@ -20,7 +25,7 @@ class DuolingoLearnSessionChallenge(object):
         else:
             return self.challenge["solutionTranslation"]
 
-    def getSourcePrompt(self, target_lang=None):
+    def get_source_prompt(self):
         """
             Actual question
             judge = Such aus den drei das richtige raus
@@ -36,7 +41,7 @@ class DuolingoLearnSessionChallenge(object):
             choiceCount = len(self.challenge["choices"])
             choiceWordList = [self.challenge["choices"][i]["phrase"] for i in range(0, choiceCount)]
             
-            question = "Welches der folgenden ist " + self.getSource() + "? " + ', '.join(choiceWordList)
+            question = "Welches der folgenden ist " + self.get_source() + "? " + ', '.join(choiceWordList)
 
             """ Replacing last "," with "oder" """
             question_spl = question.rsplit(",", 1)
@@ -46,7 +51,7 @@ class DuolingoLearnSessionChallenge(object):
             choiceCount = len(self.challenge["choices"])
             choiceList = [str(i + 1) + ".: " + self.challenge["choices"][i] for i in range(0, choiceCount)]
             
-            question = "Welche der folgenden Antworten ist richtig? Der Satz lautet: " + self.getSource()
+            question = "Welche der folgenden Antworten ist richtig? Der Satz lautet: " + self.get_source()
             question += "\nDie Antwortmöglichkeiten lauten wie folgt: " + '\n'.join(choiceList)
             """ Replacing last "," with "oder" """
             question_spl = question.rsplit("\n", 1)
@@ -54,12 +59,11 @@ class DuolingoLearnSessionChallenge(object):
             return question
         elif self.challenge["type"] == "speak":
             """ In challenge["metadata"]["non_character_tts"]['normal'] steht eine URL zu einer Vorlesedatei! """
-            return "Bitte lies diesen Satz vor: " + self.getSource()
+            return "Bitte lies diesen Satz vor: " + self.get_source()
         elif self.challenge["type"] == "translate":
-
-            return "Übersetze folgendes nach {}: ".format(target_lang) + self.getSource()
+            return "Übersetze folgendes nach {}: ".format(self.targetLang) + self.get_source()
         elif self.challenge["type"] == "name":
-            return "Wie übersetzt man \"" + self.getSource() + "\"?"
+            return "Wie übersetzt man \"" + self.get_source() + "\"?"
         elif self.challenge["type"] == "form":            
             question = "Wähle das fehlende Wort: " + \
             self.challenge["promptPieces"][0] + ", Lücke, " +  \
@@ -75,7 +79,7 @@ class DuolingoLearnSessionChallenge(object):
         else:
             return self.challenge["solutionTranslation"]
 
-    def getCorrectSolutions(self):
+    def get_correct_solutions(self):
         """
         Note: Antworten können auch freiwillige Angaben nach Schema "Er [muss/soll][/ sich] baden." enthalten
         """
@@ -95,9 +99,8 @@ class DuolingoLearnSessionChallenge(object):
         else:
             return self.challenge["compactSolutions"]
 
-
-    def getAnswerCheck(self, user_input):
-        solution_response = UserAnswerCheck(user_input).checkAnswer(self.getCorrectSolutions())
+    def check_answer(self, user_input):
+        solution_response = UserAnswerCheck(user_input).checkAnswer(self.get_correct_solutions())
         return solution_response
 
 
@@ -109,5 +112,5 @@ if __name__ == '__main__':
 
         for x in range(0, 20):
             ls = DuolingoLearnSessionChallenge(__sampleData__["challenges"][x])
-            pprint(ls.getSourcePrompt())
-            pprint(ls.getCorrectSolutions())
+            pprint(ls.get_source_prompt())
+            pprint(ls.get_correct_solutions())
