@@ -7,7 +7,6 @@ import time
 
 import requests
 from requests import Session
-from learnsession import DuolingoLearnSession
 
 __DEBUG__ = False
 
@@ -29,110 +28,14 @@ class Duolingo(object):
         self.username = username
         self.password = password
         self.user_url = "https://duolingo.com/users/%s" % self.username
-        self.learn_session_data_url = "https://www.duolingo.com/2017-06-30/sessions"
         self.session = requests.Session()
         self.session.verify = False
-        self.leader_data = None
-        self.jwt = None
-        self.session_id = None
-
-        if password:
-            self._login()
-            self.user_data = Struct(**self._get_data())
-
-    def _make_req(self, method, url, data=None):
-        headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36'}
-        if self.jwt is not None:
-            headers['Authorization'] = 'Bearer ' + self.jwt
-
-        req = requests.Request( method,
-                                url,
-                                data=json.dumps(data),
-                                headers=headers,
-                                cookies=self.session.cookies)
-        
-        prepped = req.prepare()
-        response = self.session.send(prepped, verify=True)
-        return response
-
-    def _login(self):
-        """
-        Authenticate through ``https://www.duolingo.com/login``.
-        """
-        login_url = "https://www.duolingo.com/login"
-        data = {"login": self.username, "password": self.password}
-        request = self._make_req("POST", login_url, data)
-        attempt = request.json()
-
-        if attempt.get('response') == 'OK':
-            self.jwt = request.headers['jwt']
-            return True
-
-        raise Exception("Login failed")
-
-    def get_activity_stream(self, before=None):
-        """
-        Get user's activity stream from
-        ``https://www.duolingo.com/stream/<user_id>?before=<date> if before
-        date is given or else
-        ``https://www.duolingo.com/activity/<user_id>``
-
-        :param before: Datetime in format '2015-07-06 05:42:24'
-        :type before: str
-        :rtype: dict
-        """
-
-        if before:
-            url = "https://www.duolingo.com/stream/{}?before={}"
-            url = url.format(self.user_data.id, before)
-        else:
-            url = "https://www.duolingo.com/activity/{}"
-            url = url.format(self.user_data.id)
-        request = self._make_req("GET", url)
-        try:
-            return request.json()
-        except:
-            raise Exception('Could not get activity stream')
-
-    def get_leaderboard(self, unit=None, before=None):
-        """
-        Get user's rank in the week in descending order, stream from
-        ``https://www.duolingo.com/friendships/leaderboard_activity?unit=week&_=time
-
-        :param before: Datetime in format '2015-07-06 05:42:24'
-        :param unit: maybe week or month
-        :type before: str
-        :type unit: str
-        :rtype: List
-        """
-        if unit:
-            url = 'https://www.duolingo.com/friendships/leaderboard_activity?unit={}&_={}'
-        else:
-            raise Exception('Needs unit as argument (week or month)')
-
-        if before:
-            url = url.format(unit, before)
-        else:
-            raise Exception('Needs str in Datetime format "%Y.%m.%d %H:%M:%S"')
-
-        self.leader_data = self._make_req("GET", url).json()
-        data = []
-        for result in iter(self.get_friends()):
-            for value in iter(self.leader_data['ranking']):
-                if result['id'] == int(value):
-                    temp = {'points': int(self.leader_data['ranking'][value]),
-                            'unit': unit,
-                            'id': result['id'],
-                            'username': result['username']}
-                    data.append(temp)
-
-        return sorted(data, key=lambda user: user['points'], reverse=True)
 
     def buy_item(self, item_name, abbr):
-        url = 'https://www.duolingo.com/2017-06-30/users/{}/purchase-store-item'
+        url = 'https://www.duolingo.com/2017-06-30/users/{}/shop-items'
         url = url.format(self.user_data.id)
 
-        data = {'name': item_name, 'learningLanguage': abbr}
+        data = {'itemName': item_name, 'learningLanguage': abbr}
         request = self._make_req("POST", url, data)
 
         """
@@ -141,7 +44,8 @@ class Duolingo(object):
         """
 
         if request.status_code == 400 and request.json()['error'] == 'ALREADY_HAVE_STORE_ITEM':
-            raise AlreadyHaveStoreItemException('Already equipped with ' + item_name + '.')
+            raise AlreadyHaveStoreItemException(
+                'Already equipped with ' + item_name + '.')
         if not request.ok:
             # any other error:
             raise Exception('Not possible to buy item.')
@@ -151,7 +55,8 @@ class Duolingo(object):
         figure out the users current learning language
         use this one as parameter for the shop
         """
-        lang = self.get_abbreviation_of(self.get_user_info()['learning_language_string'])
+        lang = self.get_abbreviation_of(
+            self.get_user_info()['learning_language_string'])
         if lang is None:
             raise Exception('No learning language found')
         try:
@@ -159,85 +64,6 @@ class Duolingo(object):
             return True
         except AlreadyHaveStoreItemException:
             return False
-
-    def _switch_language(self, lang):
-        """
-        Change the learned language with
-        ``https://www.duolingo.com/switch_language``.
-
-        :param lang: Wanted language abbreviation (example: ``'fr'``)
-        :type lang: str
-        """
-        data = {"learning_language": lang}
-        url = "https://www.duolingo.com/switch_language"
-        request = self._make_req("POST", url, data)
-
-        try:
-            parse = request.json()['tracking_properties']
-            if parse['learning_language'] == lang:
-                self.user_data = Struct(**self._get_data())
-        except:
-            raise Exception('Failed to switch language')
-
-    def _get_data(self):
-        """
-        Get user's data from ``https://www.duolingo.com/users/<username>``.
-        """
-        get = self._make_req("GET", self.user_url).json()
-        return get
-
-    @staticmethod
-    def _make_dict(keys, array):
-        data = {}
-
-        for key in keys:
-            if type(array) == dict:
-                data[key] = array[key]
-            else:
-                data[key] = getattr(array, key, None)
-
-        return data
-
-    def get_settings(self):
-        """Get user settings."""
-        keys = ['notify_comment', 'deactivated', 'is_follower_by',
-                'is_following']
-
-        return self._make_dict(keys, self.user_data)
-
-    def get_languages(self, abbreviations=False):
-        """
-        Get praticed languages.
-
-        :param abbreviations: Get language as abbreviation or not
-        :type abbreviations: bool
-        :return: List of languages
-        :rtype: list of str
-        """
-        data = []
-
-        for lang in self.user_data.languages:
-            if lang['learning']:
-                if abbreviations:
-                    data.append(lang['language'])
-                else:
-                    data.append(lang['language_string'])
-
-        return data
-
-    def get_language_from_abbr(self, abbr):
-        """Get language full name from abbreviation."""
-        for language in self.user_data.languages:
-            if language['language'] == abbr:
-                return language['language_string']
-        return None
-
-    def get_abbreviation_of(self, name):
-        """Get abbreviation of a language."""
-        for language in self.user_data.languages:
-            if language['language_string'] == name:
-                return language['language']
-        return None
 
     def get_language_details(self, language):
         """Get user's status about a language."""
@@ -247,23 +73,6 @@ class Duolingo(object):
 
         return {}
 
-    def get_user_info(self):
-        """Get user's informations."""
-        fields = ['username', 'bio', 'id', 'num_following', 'cohort',
-                  'language_data', 'num_followers', 'learning_language_string',
-                  'created', 'contribution_points', 'gplus_id', 'twitter_id',
-                  'admin', 'invites_left', 'location', 'fullname', 'avatar',
-                  'ui_language']
-
-        return self._make_dict(fields, self.user_data)
-
-    def get_certificates(self):
-        """Get user's certificates."""
-        for certificate in self.user_data.certificates:
-            certificate['datetime'] = certificate['datetime'].strip()
-
-        return self.user_data.certificates
-
     def get_streak_info(self):
         """Get user's streak informations."""
         fields = ['daily_goal', 'site_streak', 'streak_extended_today']
@@ -272,15 +81,6 @@ class Duolingo(object):
     def _is_current_language(self, abbr):
         """Get if user is learning a language."""
         return abbr in self.user_data.language_data.keys()
-
-    def get_calendar(self, language_abbr=None):
-        """Get user's last actions."""
-        if language_abbr:
-            if not self._is_current_language(language_abbr):
-                self._switch_language(language_abbr)
-            return self.user_data.language_data[language_abbr]['calendar']
-        else:
-            return self.user_data.calendar
 
     def get_language_progress(self, lang):
         """Get informations about user's progression in a language."""
@@ -293,20 +93,6 @@ class Duolingo(object):
                   'points', 'fluency_score', 'level']
 
         return self._make_dict(fields, self.user_data.language_data[lang])
-
-    def get_friends(self):
-        """Get user's friends."""
-        for k, v in iter(self.user_data.language_data.items()):
-            data = []
-            for friend in v['points_ranking_data']:
-                temp = {'username': friend['username'],
-                        'id': friend['id'],
-                        'points': friend['points_data']['total'],
-                        'languages': [i['language_string'] for i in
-                                      friend['points_data']['languages']]}
-                data.append(temp)
-
-            return data
 
     def get_known_words(self, lang):
         """Get a list of all words learned by user in a language."""
@@ -343,7 +129,7 @@ class Duolingo(object):
         """Return the topics mastered ("golden") by a user in a language."""
         return [topic['title']
                 for topic in self.user_data.language_data[lang]['skills']
-                if topic['learned'] and topic['levels_finished']==5]
+                if topic['learned'] and topic['levels_finished'] == 5]
 
     def get_reviewable_topics(self, lang):
         """Return the topics learned but not golden by a user in a language."""
@@ -381,8 +167,6 @@ class Duolingo(object):
 
     def get_vocabulary(self, language_abbr=None):
         """Get overview of user's vocabulary in a language."""
-        if not self.password:
-            raise Exception("You must provide a password for this function")
         if language_abbr and not self._is_current_language(language_abbr):
             self._switch_language(language_abbr)
 
@@ -391,71 +175,9 @@ class Duolingo(object):
         overview = overview_request.json()
 
         return overview
-
-    _cloudfront_server_url = None
-    _homepage_text = None
-
-    @property
-    def _homepage(self):
-        if self._homepage_text:
-            return self._homepage_text
-        homepage_url = "https://www.duolingo.com"
-        request = self._make_req("GET", homepage_url)
-        self._homepage_text = request.text
-        return self._homepage
-
-    @property
-    def _cloudfront_server(self):
-        if self._cloudfront_server_url:
-            return self._cloudfront_server_url
-
-        server_list = re.search('//.+\.cloudfront\.net', self._homepage)
-        self._cloudfront_server_url = "https:{}".format(server_list.group(0))
-
-        return self._cloudfront_server_url
-
-    _tts_voices = None
-
-    def _process_tts_voices(self):
-        voices_js = re.search('duo\.tts_multi_voices = {.+};',
-                              self._homepage).group(0)
-
-        voices = voices_js[voices_js.find("{"):voices_js.find("}") + 1]
-        self._tts_voices = json.loads(voices)
-
-    def _get_voice(self, language_abbr, rand=False, voice=None):
-        if not self._tts_voices:
-            self._process_tts_voices()
-        if voice and voice != 'default':
-            return '{}/{}'.format(language_abbr, voice)
-        if rand:
-            return random.choice(self._tts_voices[language_abbr])
-        else:
-            return self._tts_voices[language_abbr][0]
-
-    def get_language_voices(self, language_abbr=None):
-        if not language_abbr:
-            language_abbr = list(self.user_data.language_data.keys())[0]
-        voices = []
-        if not self._tts_voices:
-            self._process_tts_voices()
-        for voice in self._tts_voices[language_abbr]:
-            if voice == language_abbr:
-                voices.append('default')
-            else:
-                voices.append(voice.replace('{}/'.format(language_abbr), ''))
-        return voices
-
-    def get_audio_url(self, word, language_abbr=None, random=True, voice=None):
-        if not language_abbr:
-            language_abbr = list(self.user_data.language_data.keys())[0]
-        tts_voice = self._get_voice(language_abbr, rand=random, voice=voice)
-        return "{}/tts/{}/token/{}".format(self._cloudfront_server, tts_voice,
-                                           word)
+   
 
     def get_related_words(self, word, language_abbr=None):
-        if not self.password:
-            raise Exception("You must provide a password for this function")
         if language_abbr and not self._is_current_language(language_abbr):
             self._switch_language(language_abbr)
 
@@ -469,87 +191,9 @@ class Duolingo(object):
                 return [w for w in overview['vocab_overview']
                         if w['lexeme_id'] in related_lexemes]
 
-    def get_current_learnsession(self, topic=None):
-        if not self.password and not __DEBUG__:
-            raise Exception("You must provide a password for this function")
-        
-        """
-        This URL seems to be consistent over all languages and progresses
-        """
-        
-        
-        #data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":["translate"],"type":"LESSON", "levelIndex":topic["levels_finished"], "levelSessionIndex":topic["progress_level_session_index"],"juicy":True,}
-
-
-        if topic['title'] in self.get_golden_topics(topic['language']):
-            data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"SKILL_PRACTICE", "skillId":topic['id']}
-        else:
-            data = {"fromLanguage":self.user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":['translate'],"type":"LESSON", "skillId":topic['id'], "levelIndex":topic['levels_finished'], "levelSessionIndex":topic['progress_level_session_index']}
-        
-
-        """ Set Debug to false to get real server data """
-        if not __DEBUG__:
-            if topic['language'] and not self._is_current_language(topic['language']):
-                self._switch_language(topic['language'])
-
-            learnRequest = self._make_req("POST", self.learn_session_data_url, data)
-            print(learnRequest)
-            learnSessionData = learnRequest.json()
-            self.session_id = learnSessionData['metadata']['id']
-
-        else:
-            learnSessionData = __sampleData__
-        
-        return DuolingoLearnSession(learnSessionData)
-
     def get_user_input(self, sentence=None):
         user_input = input(sentence)
         return user_input
 
-    def get_active_topics(self, language_abbr=None):
-        """Return the topics that are active for a user in a language."""
-        
-        return [topic['title']
-                for topic in self.user_data.language_data[language_abbr]['skills']
-                if not topic['locked']]
-
-    def get_active_skills(self, language_abbr=None):
-        """Return active skill object  """
-        skills = [skill for skill in
-                  self.user_data.language_data[language_abbr]['skills']]
-
-        return [skill for skill in skills
-                if not skill['locked']]
-
-
-    def get_skills_in_progress(self, language_abbr=None):
-        """Return topics that have been started but are not mastered yet"""
-        return [topic 
-                for topic in self.get_active_topics(language_abbr) 
-                if topic not in self.get_golden_topics(language_abbr)]
-
-    def get_current_language_abbr(self):
-        """Return the abbreviation of the current active language the user is studying"""
-        return self.get_abbreviation_of(self.get_user_info()['learning_language_string'])
-
-    def end_session(self, data):
-        request = self._make_req("PUT", self.learn_session_data_url + "/" + self.session_id, data=data)
-        return request
-
-attrs = [
-    'settings', 'languages', 'user_info', 'certificates', 'streak_info',
-    'calendar', 'language_progress', 'friends', 'known_words',
-    'learned_skills', 'known_topics', 'activity_stream', 'vocabulary',
-
-    'current_learnsession', 'skills_in_progress', 'current_language_abbr',
-    'active_skills', 'active_topics'
-]
-
-for attr in attrs:
-    getter = getattr(Duolingo, "get_" + attr)
-    prop = property(getter)
-    setattr(Duolingo, attr, prop)
-
 if __name__ == '__main__':
     pass
-
