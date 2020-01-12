@@ -1,7 +1,7 @@
 import re
 import json
 import random
-from duorequest import DuoRequest
+from .duorequest import DuoRequest
 
 class DuoVoice():
 

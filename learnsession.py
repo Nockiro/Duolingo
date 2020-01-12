@@ -1,6 +1,6 @@
 import json
-from duorequest import DuoRequest
-from lschallenge import DuolingoLearnSessionChallenge
+from .duorequest import DuoRequest
+from .lschallenge import DuolingoLearnSessionChallenge
 from collections import namedtuple
 import datetime
 import time

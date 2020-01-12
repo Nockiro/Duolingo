@@ -1,5 +1,5 @@
 import json
-from user_answer_check import UserAnswerCheck
+from .user_answer_check import UserAnswerCheck
 
 class DuolingoLearnSessionChallenge(object):
     def __init__(self, challengeJsonObject):
@@ -9,7 +9,7 @@ class DuolingoLearnSessionChallenge(object):
 
     def get_answer_language(self):
         """ Returns the language in which the question should be answered"""
-        return self.targetLang;
+        return self.targetLang
 
     def get_source(self):
         """

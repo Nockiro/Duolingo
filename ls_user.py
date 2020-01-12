@@ -1,9 +1,9 @@
-from duosession import DuoSession
-from duorequest import DuoRequest
-from duoprofile import DuoProfile
-from duovoice import DuoVoice
-from learnsession import DuolingoLearnSession
-from helpers.dicthelper import DictHelper
+from .duosession import DuoSession
+from .duorequest import DuoRequest
+from .duoprofile import DuoProfile
+from .duovoice import DuoVoice
+from .learnsession import DuolingoLearnSession
+from .helpers.dicthelper import DictHelper
 
 # lingo = duo.Duolingo('DSA975012', password='sprachassist') # E-mail - d21292@urhen.com
 
