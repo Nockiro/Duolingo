@@ -1,5 +1,6 @@
-from ls_user import User
-from lschallenge import DuolingoLearnSessionChallenge
+from duoapi.ls_user import User
+from duoapi.lschallenge import DuolingoLearnSessionChallenge
+from duoapi.learnsession import DuolingoLearnSession
 from pprint import pprint
 from time import sleep
 import json
@@ -10,8 +11,8 @@ import datetime
 #lingo  = duolingo.Duolingo('Robin143310')
 
 if __name__ == "__main__":
-    user = User("DSA975012", "sprachassist"); # E-mail - d21292@urhen.com
-    ls = None
+    user = User("DSA975012", "sprachassist")  # E-mail - d21292@urhen.com
+    ls : DuolingoLearnSession = None
 
     # print(user.get_active_skills(current_language)[0]['locked'])
 
@@ -20,8 +21,7 @@ if __name__ == "__main__":
             # TODO There were infrequent Server Response 500, check if they are gone
             ls = user.get_current_learnsession(topic)
             print(ls.get_sessionid())
-            sleep(0.1); # Add a bit of delay to not flood the duolingo backend
-
+            sleep(0.1)  # Add a bit of delay to not flood the duolingo backend
 
     challengeList = ls.get_challenge_list()
     while challengeList:
@@ -38,11 +38,9 @@ if __name__ == "__main__":
                 print("Incorrect")
             print()
 
-
     if not challengeList:
         data = ls.get_learnsession_data()
         data['failed'] = False
 
         sessions_end = ls.end_session(data)
         print(sessions_end)
-

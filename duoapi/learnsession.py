@@ -1,7 +1,9 @@
 import json
 from .duorequest import DuoRequest
 from .lschallenge import DuolingoLearnSessionChallenge
+from .duosession import DuoSession
 from collections import namedtuple
+import pickle
 import datetime
 import time
 
@@ -9,18 +11,28 @@ __DEBUG__ = False
 learn_session_data_url = "https://www.duolingo.com/2017-06-30/sessions"
 class DuolingoLearnSession(object):
 
-    def __init__(self, session, jsonResponseData):
+    def __init__(self, session : DuoSession, jsonResponseData):
+        """Initialization with session and response data"""
 
-        self.session = session
+        if session != None:
+            self.session = session
 
-        self.learn_session_data = jsonResponseData
-        self.learn_session_metadata = self.learn_session_data["metadata"]
-        self.learn_session_challenge_list = self.learn_session_data["challenges"]
+            self.learn_session_data = jsonResponseData
+            self.learn_session_metadata = self.learn_session_data["metadata"]
+            self.learn_session_challenge_list = self.learn_session_data["challenges"]
 
-        self.learn_session_id = self.learn_session_metadata['id']
-        self.current_language = self.learn_session_metadata["language_string"]
+            self.learn_session_id = self.learn_session_metadata['id']
+            self.current_language = self.learn_session_metadata["language_string"]
 
-    def fetch(session, data):      
+    def serialize(self):
+        return pickle.dumps(self.__dict__)
+
+    def deserialize(serializedBinary):      
+        s = DuolingoLearnSession(None, None)  
+        s.__dict__ = pickle.loads(serializedBinary)
+        return s
+
+    def fetch(session : DuoSession, data):      
         """ Set Debug to false to get real server data """
         if not __DEBUG__:
             learnRequest = DuoRequest.do_request(learn_session_data_url, session, data)
