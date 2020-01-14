@@ -3,7 +3,7 @@ import urllib3
 from requests import Session, Response
 import json
 
-import duosession
+from . import duosession
 
 class DuoRequest(object):
     

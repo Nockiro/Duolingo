@@ -15,7 +15,7 @@ class DuoSession():
         """
 
         """ Deferred import to avoid circular dependency """
-        from duorequest import DuoRequest
+        from .duorequest import DuoRequest
 
         login_url = "https://www.duolingo.com/login"
         data = {"login": username, "password": password}

@@ -1,4 +1,4 @@
-from duorequest import DuoRequest
+from .duorequest import DuoRequest
 
 class DuoProfile():
     def __init__(self, user_data, session):
