@@ -16,12 +16,14 @@ if __name__ == "__main__":
 
     # print(user.get_active_skills(current_language)[0]['locked'])
 
-    for topic in user.get_active_skills(user.get_working_language(True)):
-        if user.get_skills_in_progress(user.get_working_language(True))[0] in topic.values():
-            # TODO There were infrequent Server Response 500, check if they are gone
-            ls = user.get_current_learnsession(topic)
-            print(ls.get_sessionid())
-            sleep(0.1)  # Add a bit of delay to not flood the duolingo backend
+    # for topic in user.get_active_skills(user.get_working_language(True)):
+    #     if user.get_skills_in_progress(user.get_working_language(True))[0] in topic.values():
+    #         # TODO There were infrequent Server Response 500, check if they are gone
+    #         ls = user.get_current_learnsession(topic)
+    #         print(ls.get_sessionid())
+    #         sleep(0.1)  # Add a bit of delay to not flood the duolingo backend
+
+    ls = user.get_global_practice_learnsession(user.get_working_language(True))
 
     challengeList = ls.get_challenge_list()
     while challengeList:

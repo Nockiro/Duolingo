@@ -5,15 +5,20 @@ class DuolingoLearnSessionChallenge(object):
     def __init__(self, challengeJsonObject):
         self.challenge = challengeJsonObject
         self.type = challengeJsonObject["metadata"]["type"]
-        self.targetLang = self.challenge['metadata']['target_language_name']
-        
-        # hard coded translation of target language
-        if self.targetLang == "German":
-            self.targetLang = "Deutsch"
+
+        if "target_language_name" in self.challenge['metadata']:
+            self.targetLang = self.challenge['metadata']['target_language_name']
+
+            # hard coded translation of target language
+            if self.targetLang == "German":
+                self.targetLang = "Deutsch"
 
     def get_answer_language(self):
         """ Returns the language in which the question should be answered"""
-        return self.targetLang
+        try:
+            return self.targetLang
+        except NameError:
+            return "";
 
     def get_source(self):
         """
@@ -64,7 +69,7 @@ class DuolingoLearnSessionChallenge(object):
             return question
         elif self.challenge["type"] == "speak":
             """ In challenge["metadata"]["non_character_tts"]['normal'] steht eine URL zu einer Vorlesedatei! """
-            return "Bitte lies diesen Satz vor: " + self.get_source()
+            return "Bitte lies diesen Satz übersetzt vor: " + self.get_source()
         elif self.challenge["type"] == "translate":
             return "Übersetze folgendes nach {}: ".format(self.targetLang) + self.get_source()
         elif self.challenge["type"] == "name":

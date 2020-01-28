@@ -122,8 +122,8 @@ class User():
         # data = {"fromLanguage":self._user_data.ui_language,"learningLanguage":topic['language'],"challengeTypes":["translate"],"type":"LESSON", "levelIndex":topic["levels_finished"], "levelSessionIndex":topic["progress_level_session_index"],"juicy":True,}
 
         if topic['title'] in self.get_golden_topics(topic['language']):
-            data = {"fromLanguage": self.get_full_user_info()["ui_language"], "learningLanguage": topic['language'], "challengeTypes": [
-                'translate'], "type": "SKILL_PRACTICE", "skillId": topic['id']}
+            data = {"fromLanguage": self.get_full_user_info()["ui_language"], "learningLanguage": topic['language'], "challengeTypes": ['translate'], 
+                    "type": "SKILL_PRACTICE", "skillId": topic['id']}
         else:
             data = {"fromLanguage": self.get_full_user_info()["ui_language"], "learningLanguage": topic['language'], "challengeTypes": ['translate'],
                     "type": "LESSON", "skillId": topic['id'], "levelIndex": topic['levels_finished'], "levelSessionIndex": topic['progress_level_session_index']
@@ -133,6 +133,17 @@ class User():
             self._switch_working_language(topic['language'])
 
         return DuolingoLearnSession.fetch(self.session, data)
+
+    def get_global_practice_learnsession(self, language_abbr):
+        #TODO: Add more supported challengeTypes (e.g. 'form', 'speak', 'judge', 'name')
+        data = {"fromLanguage": self.get_full_user_info()["ui_language"], "learningLanguage": language_abbr, "challengeTypes": ['translate'], 
+                "type": "GLOBAL_PRACTICE"}
+
+        if language_abbr and not self._is_current_language(language_abbr):
+            self._switch_working_language(language_abbr)
+
+        return DuolingoLearnSession.fetch(self.session, data)
+
 
     def get_active_skills(self, language_abbr):
         """
