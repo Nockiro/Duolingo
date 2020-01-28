@@ -6,6 +6,10 @@ class DuolingoLearnSessionChallenge(object):
         self.challenge = challengeJsonObject
         self.type = challengeJsonObject["metadata"]["type"]
         self.targetLang = self.challenge['metadata']['target_language_name']
+        
+        # hard coded translation of target language
+        if self.targetLang == "German":
+            self.targetLang = "Deutsch"
 
     def get_answer_language(self):
         """ Returns the language in which the question should be answered"""
@@ -24,6 +28,7 @@ class DuolingoLearnSessionChallenge(object):
             return self.challenge["metadata"]["text"]
         else:
             return self.challenge["solutionTranslation"]
+
 
     def get_source_prompt(self):
         """
