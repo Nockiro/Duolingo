@@ -33,8 +33,6 @@ class DuolingoLeaderBoard(object):
                 
                 print(self.session.user_id)
                 for x in range(0, len(self.activeBoard["cohort"]["rankings"]) - 1):
-                    print(self.activeBoard["cohort"]["rankings"][x]["user_id"])
-
                     if str(self.activeBoard["cohort"]["rankings"][x]["user_id"]) == str(self.session.user_id):  
                         self.rank = x + 1
                         break
@@ -43,7 +41,6 @@ class DuolingoLeaderBoard(object):
         """ Set Debug to false to get real server data """
         if not __DEBUG__:
             leaderboardRequest = DuoRequest.do_request(leaderboard_url % session.user_id, session)
-            print(leaderboardRequest)
             jsonResponseData = leaderboardRequest.json()
         else:
             jsonResponseData = __sampleData__

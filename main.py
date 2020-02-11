@@ -13,10 +13,18 @@ import datetime
 if __name__ == "__main__":
     user = User("DSA975012", "sprachassist")  # E-mail - d21292@urhen.com
     lb = user.get_current_active_leaderboard()
+    pprint(user.get_available_languages())
+    pprint(user.get_working_language(False))
+    pprint(user.get_settings())
+    pprint(user.get_profile_info().get_friendlist_leaderbord("week"))
+    pprint(user.get_profile_info().get_activity())
+    pprint(user.get_profile_info().get_friends())
+    #pprint(user.get_voice_stuff().get_audio_url("hello", "en"))
     pprint(lb.isLeagueActive())
     pprint(lb.getRank())
     pprint(lb.getScore())
     pprint(lb.getTierAsWord())
+    pprint(user.get_full_user_info()["monthlyXp"])
     ls : DuolingoLearnSession = None
 
     # print(user.get_active_skills(current_language)[0]['locked'])

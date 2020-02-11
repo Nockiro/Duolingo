@@ -46,6 +46,11 @@ class User():
 
         self._user_data = Struct(**response.json())
 
+        user_url = "https://duolingo.com/2017-06-30/users/%s?fields=totalXp,monthlyXp,weeklyXp,xpGoal" % self.session.user_id
+        response = DuoRequest.do_request(user_url, self.session)
+        
+        self._user_data.__dict__.update(**response.json())
+
     def _switch_working_language(self, lang):
         """
         Change the learned language (the "working language") with
