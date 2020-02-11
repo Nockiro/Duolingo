@@ -18,7 +18,7 @@ class DuolingoLearnSessionChallenge(object):
         try:
             return self.targetLang
         except NameError:
-            return "";
+            return ""
 
     def get_source(self):
         """

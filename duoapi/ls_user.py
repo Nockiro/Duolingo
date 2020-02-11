@@ -4,6 +4,7 @@ from .duoprofile import DuoProfile
 from .duovoice import DuoVoice
 from .learnsession import DuolingoLearnSession
 from .helpers.dicthelper import DictHelper
+from .duoleaderboard import DuolingoLeaderBoard
 
 # lingo = duo.Duolingo('DSA975012', password='sprachassist') # E-mail - d21292@urhen.com
 
@@ -108,7 +109,7 @@ class User():
                   'language_data', 'languages', 'learning_language', 'learning_language_string', 'num_followers',
                   'created', 'contribution_points', 'gplus_id', 'twitter_id',
                   'admin', 'invites_left', 'location', 'fullname', 'avatar',
-                  'ui_language']
+                  'ui_language', 'weeklyXp', 'monthlyXp', 'xpGoal']
 
         return DictHelper.make(fields, self._user_data)
 
@@ -173,6 +174,14 @@ class User():
         return [topic['title']
                 for topic in self.get_full_user_info()["language_data"][language_abbr]['skills']
                 if topic['learned'] and topic['levels_finished'] == 5]
+
+    def get_current_active_leaderboard(self, language_abbr = None):
+        """Return your rank und position of the leaderboard"""
+
+        if language_abbr and not self._is_current_language(language_abbr):
+            self._switch_working_language(language_abbr)
+
+        return DuolingoLeaderBoard.fetch(self.session)
 
 
 if __name__ == '__main__':

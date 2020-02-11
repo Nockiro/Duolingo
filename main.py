@@ -12,6 +12,11 @@ import datetime
 
 if __name__ == "__main__":
     user = User("DSA975012", "sprachassist")  # E-mail - d21292@urhen.com
+    lb = user.get_current_active_leaderboard()
+    pprint(lb.isLeagueActive())
+    pprint(lb.getRank())
+    pprint(lb.getScore())
+    pprint(lb.getTierAsWord())
     ls : DuolingoLearnSession = None
 
     # print(user.get_active_skills(current_language)[0]['locked'])
