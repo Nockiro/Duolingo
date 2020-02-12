@@ -143,7 +143,7 @@ class User():
     def get_global_practice_learnsession(self, language_abbr):
         #TODO: Add more supported challengeTypes (e.g. 'form', 'speak', 'judge', 'name')
         data = {"fromLanguage": self.get_full_user_info()["ui_language"], "learningLanguage": language_abbr, "challengeTypes": ['translate'], 
-                "type": "GLOBAL_PRACTICE"}
+                "type": "GLOBAL_PRACTICE", "juicy": True, "smartTipsVersion" : 2}
 
         if language_abbr and not self._is_current_language(language_abbr):
             self._switch_working_language(language_abbr)

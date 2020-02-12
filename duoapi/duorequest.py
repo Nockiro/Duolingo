@@ -11,7 +11,7 @@ class DuoRequest(object):
         
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-        headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36'}
+        headers = { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.100 Safari/537.36', "content-type":"application/json; charset=UTF-8"}
         if duoSession.jwt is not None:
             headers['Authorization'] = 'Bearer ' + duoSession.jwt
 
