@@ -114,7 +114,7 @@ class User():
                   'language_data', 'languages', 'learning_language', 'learning_language_string', 'num_followers',
                   'created', 'contribution_points', 'gplus_id', 'twitter_id',
                   'admin', 'invites_left', 'location', 'fullname', 'avatar',
-                  'ui_language', 'weeklyXp', 'monthlyXp', 'xpGoal']
+                  'ui_language', 'weeklyXp', 'monthlyXp', 'xpGoal', 'totalXp']
 
         return DictHelper.make(fields, self._user_data)
 
